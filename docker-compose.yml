@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  language-assistant:
+    build: .
+    ports:
+      - "8001:8000"  # Bu satırı 8001 yap
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./app:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  app_data:

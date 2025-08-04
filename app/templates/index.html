@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Dil Öğrenme Asistanı</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .bot-message {
+            background: #f8f9fa;
+            color: #333;
+            align-self: flex-start;
+            border: 1px solid #e9ecef;
+        }
+
+        .suggestions-message {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            align-self: center;
+            text-align: center;
+            max-width: 90%;
+            font-weight: 500;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #messageInput {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 14px;
+            resize: none;
+            min-height: 44px;
+            max-height: 100px;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            font-size: 18px;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .end-conversation-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .end-conversation-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 18px;
+            align-self: flex-start;
+            max-width: 80px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .welcome-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .welcome-section h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .welcome-section p {
+            color: #666;
+            font-size: 13px;
+            margin: 3px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .welcome-section {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Language Learning Assistant</h1>
+            <p>Learn Turkish, English, German, French, Italian</p>
+            <div class="status-bar">
+                <span id="languageStatus">Language: Detecting...</span>
+                <span id="levelStatus">Level: Assessing...</span>
+                <button class="end-conversation-btn" onclick="endConversation()">End Conversation</button>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="messages" id="messages">
+                <div class="welcome-message">
+                    <div class="welcome-section">
+                        <h3>🇹🇷 Türkçe</h3>
+                        <p>Merhaba! Hangi dilde konuşmak istiyorsun? Sadece yazmaya başla, 3 mesaj sonra seviyeni tespit edeceğim.</p>
+                    </div>
+                    
+                    <div class="welcome-section">
+                        <h3>🇬🇧 English</h3>
+                        <p>Hello! Which language would you like to practice? Just start writing, I'll detect your level after 3 messages.</p>
+                    </div>
+                    
+                    <div class="welcome-section">
+                        <h3>🇩🇪 Deutsch</h3>
+                        <p>Hallo! In welcher Sprache möchtest du üben? Fang einfach an zu schreiben, ich erkenne dein Niveau nach 3 Nachrichten.</p>
+                    </div>
+                    
+                    <div class="welcome-section">
+                        <h3>🇫🇷 Français</h3>
+                        <p>Salut ! Dans quelle langue veux-tu pratiquer ? Commence à écrire, je détecterai ton niveau après 3 messages.</p>
+                    </div>
+                    
+                    <div class="welcome-section">
+                        <h3>🇮🇹 Italiano</h3>
+                        <p>Ciao! In che lingua vuoi praticare? Inizia a scrivere, rileverò il tuo livello dopo 3 messaggi.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="messageInput" 
+                    placeholder="Write your message in any language..."
+                    rows="1"
+                ></textarea>
+            </div>
+            <button class="send-button" onclick="sendMessage()" id="sendButton">
+                ➤
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let isLoading = false;
+
+        // Initialize session
+        async function initSession() {
+            try {
+                const response = await fetch('/new-session');
+                const data = await response.json();
+                sessionId = data.session_id;
+            } catch (error) {
+                console.error('Error initializing session:', error);
+                sessionId = 'default-session';
+            }
+        }
+
+        // Initialize on page load
+        initSession();
+
+        // Auto-resize textarea
+        const messageInput = document.getElementById('messageInput');
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+
+        // Send message on Enter (Shift+Enter for new line)
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Language mapping for display
+        const languageNames = {
+            'turkish': 'Türkçe 🇹🇷',
+            'english': 'English 🇬🇧', 
+            'german': 'Deutsch 🇩🇪',
+            'french': 'Français 🇫🇷',
+            'italian': 'Italiano 🇮🇹'
+        };
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || isLoading) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+
+            // Show loading
+            setLoading(true);
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Add bot response
+                    addMessage(data.response, data.suggestions ? 'suggestions' : 'bot');
+
+                    // Update status
+                    updateStatus(data.detected_language, data.user_level);
+                } else {
+                    addMessage('Sorry, an error occurred. Please try again.', 'bot');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Connection error. Please check your internet connection.', 'bot');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function addMessage(text, type) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = text;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function updateStatus(language, level) {
+            const languageStatus = document.getElementById('languageStatus');
+            const levelStatus = document.getElementById('levelStatus');
+
+            if (language) {
+                languageStatus.textContent = `Language: ${languageNames[language] || language}`;
+            }
+
+            if (level) {
+                levelStatus.textContent = `Level: ${level}`;
+            }
+        }
+
+        function setLoading(loading) {
+            isLoading = loading;
+            const sendButton = document.getElementById('sendButton');
+            const typingIndicator = document.getElementById('typingIndicator');
+
+            if (loading) {
+                sendButton.disabled = true;
+                sendButton.textContent = '⏳';
+                typingIndicator.style.display = 'block';
+            } else {
+                sendButton.disabled = false;
+                sendButton.textContent = '➤';
+                typingIndicator.style.display = 'none';
+            }
+        }
+
+        async function endConversation() {
+            if (isLoading) return;
+
+            setLoading(true);
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'konuşmayı bitir',
+                        session_id: sessionId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    addMessage(data.response, 'suggestions');
+                    
+                    // Reset status
+                    document.getElementById('languageStatus').textContent = 'Language: Detecting...';
+                    document.getElementById('levelStatus').textContent = 'Level: Assessing...';
+                    
+                    // Generate new session
+                    await initSession();
+                }
+            } catch (error) {
+                console.error('Error ending conversation:', error);
+                addMessage('Could not end conversation. Please try again.', 'bot');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Focus input on page load
+        window.addEventListener('load', () => {
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html>

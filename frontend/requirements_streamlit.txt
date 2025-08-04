@@ -1,0 +1,5 @@
+streamlit==1.29.0
+openai==0.28.1
+requests==2.31.0
+python-dotenv==1.0.0
+numpy>=1.21.0
